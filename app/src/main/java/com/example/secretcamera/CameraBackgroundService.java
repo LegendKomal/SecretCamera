@@ -3,6 +3,7 @@ package com.example.secretcamera;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -37,6 +38,7 @@ public class CameraBackgroundService extends Service {
     private static final String TAG = "CameraBackgroundService";
     private static final String CHANNEL_ID = "CameraServiceChannel";
     private static final int NOTIFICATION_ID = 1;
+    private static final String ACTION_STOP_RECORDING = "com.example.secretcamera.STOP_FROM_NOTIFICATION";
 
     private CameraDevice cameraDevice;
     private CameraCaptureSession cameraCaptureSession;
@@ -45,7 +47,6 @@ public class CameraBackgroundService extends Service {
     private Handler backgroundHandler;
     private boolean isRecording = false;
     private String selectedCameraFacing = "BACK";
-
 
     @Override
     public void onCreate() {
@@ -58,19 +59,20 @@ public class CameraBackgroundService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(TAG, "Service started");
-        startForeground(NOTIFICATION_ID, createNotification());
-        if (intent.getAction() != null) {
-            if (intent.getAction().equals("START_RECORDING")) {
+
+        if (intent != null && intent.getAction() != null) {
+            String action = intent.getAction();
+            if (action.equals("START_RECORDING")) {
                 selectedCameraFacing = intent.getStringExtra("CAMERA_FACING");
                 if (selectedCameraFacing == null) {
                     selectedCameraFacing = "BACK";
                 }
+                startForeground(NOTIFICATION_ID, createNotification());
                 startRecording();
-            } else if (intent.getAction().equals("STOP_RECORDING")) {
+            } else if (action.equals("STOP_RECORDING") || action.equals(ACTION_STOP_RECORDING)) {
                 stopRecording();
             }
         }
-
 
         return START_STICKY;
     }
@@ -80,6 +82,7 @@ public class CameraBackgroundService extends Service {
         return null;
     }
 
+
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel serviceChannel = new NotificationChannel(
@@ -87,16 +90,48 @@ public class CameraBackgroundService extends Service {
                     "Camera Service Channel",
                     NotificationManager.IMPORTANCE_DEFAULT
             );
+            // Disable sound and vibration for the notification
+            serviceChannel.setSound(null, null);
+            serviceChannel.enableVibration(false);
+
             NotificationManager manager = getSystemService(NotificationManager.class);
             manager.createNotificationChannel(serviceChannel);
         }
     }
 
     private Notification createNotification() {
+        // Create intent for stop action
+        Intent stopIntent = new Intent(this, CameraBackgroundService.class);
+        stopIntent.setAction(ACTION_STOP_RECORDING);
+
+        // Create pending intent for stop action
+        PendingIntent stopPendingIntent = PendingIntent.getService(
+                this,
+                0,
+                stopIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        // Create intent for opening the app
+        Intent mainIntent = new Intent(this, MainActivity.class);
+        PendingIntent mainPendingIntent = PendingIntent.getActivity(
+                this,
+                0,
+                mainIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        // Build the notification
         return new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("Camera Background Service")
-                .setContentText("Recording in progress")
+                .setContentTitle("Recording in Progress")
+                .setContentText("Tap to open app")
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setOngoing(true)
+                .setSound(null)
+                .setVibrate(null)
+                .setContentIntent(mainPendingIntent)
+                .addAction(android.R.drawable.ic_media_pause, "Stop Recording", stopPendingIntent)
                 .build();
     }
 
@@ -259,16 +294,24 @@ public class CameraBackgroundService extends Service {
         }
 
         try {
-            cameraCaptureSession.stopRepeating();
-            cameraCaptureSession.abortCaptures();
+            if (cameraCaptureSession != null) {
+                cameraCaptureSession.stopRepeating();
+                cameraCaptureSession.abortCaptures();
+            }
         } catch (CameraAccessException e) {
             Log.e(TAG, "Error stopping camera capture: " + e.getMessage());
         }
 
-        mediaRecorder.stop();
-        mediaRecorder.reset();
-        mediaRecorder.release();
-        mediaRecorder = null;
+        if (mediaRecorder != null) {
+            try {
+                mediaRecorder.stop();
+            } catch (IllegalStateException e) {
+                Log.e(TAG, "Error stopping media recorder: " + e.getMessage());
+            }
+            mediaRecorder.reset();
+            mediaRecorder.release();
+            mediaRecorder = null;
+        }
 
         if (cameraDevice != null) {
             cameraDevice.close();
@@ -278,10 +321,15 @@ public class CameraBackgroundService extends Service {
         isRecording = false;
         Log.d(TAG, "Stopped recording");
 
-
+        // Broadcast that recording has stopped
         Intent intent = new Intent("com.example.secretcamera.RECORDING_STOPPED");
         sendBroadcast(intent);
+
+        // Stop the foreground service
+        stopForeground(true);
+        stopSelf();
     }
+
 
     @Override
     public void onDestroy() {
