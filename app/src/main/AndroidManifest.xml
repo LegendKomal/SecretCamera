@@ -25,9 +25,6 @@
 
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
 
-    <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
-    <uses-permission android:name="android.permission.PROCESS_OUTGOING_CALLS"/>
-
 
     <application
         android:allowBackup="true"
@@ -68,15 +65,6 @@
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="com.example.secretcamera.SERVICE_RESTART" />
                 <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </receiver>
-
-        <receiver
-            android:name=".PhoneCallReceiver"
-            android:enabled="true"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.NEW_OUTGOING_CALL" />
             </intent-filter>
         </receiver>
 
