@@ -294,26 +294,28 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
 
 
     private boolean checkAllPermissions() {
-        // Check camera and audio permissions for all Android versions
+        
         boolean cameraPermission = ContextCompat.checkSelfPermission(this,
                 Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED;
         boolean audioPermission = ContextCompat.checkSelfPermission(this,
                 Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED;
 
-        // Initialize storage permission as true
+        
         boolean storagePermission = true;
 
-        // Check storage permission based on Android version
+        
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            // Android 11 and above: check MANAGE_EXTERNAL_STORAGE
+
+            
             storagePermission = Environment.isExternalStorageManager();
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            // Android 6-10: check WRITE_EXTERNAL_STORAGE
+
+            
             storagePermission = ContextCompat.checkSelfPermission(this,
                     Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
         }
 
-        // Check notification permission for Android 13 and above
+        
         boolean notificationPermission = true;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             notificationPermission = ContextCompat.checkSelfPermission(this,
@@ -326,7 +328,7 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
     private void requestRequiredPermissions() {
         ArrayList<String> permissions = new ArrayList<>();
 
-        // Add basic permissions required for all versions
+        
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
                 != PackageManager.PERMISSION_GRANTED) {
             permissions.add(Manifest.permission.CAMERA);
@@ -336,7 +338,7 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
             permissions.add(Manifest.permission.RECORD_AUDIO);
         }
 
-        // Add storage permission for Android 6-10
+        
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
                 Build.VERSION.SDK_INT < Build.VERSION_CODES.R &&
                 ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
@@ -344,19 +346,19 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
             permissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
         }
 
-        // Add notification permission for Android 13 and above
+        
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
                 ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
                         != PackageManager.PERMISSION_GRANTED) {
             permissions.add(Manifest.permission.POST_NOTIFICATIONS);
         }
 
-        // Request runtime permissions
+        
         if (!permissions.isEmpty()) {
             permissionLauncher.launch(permissions.toArray(new String[0]));
         }
 
-        // Handle storage permission for Android 11 and above
+        
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !Environment.isExternalStorageManager()) {
             try {
                 Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
