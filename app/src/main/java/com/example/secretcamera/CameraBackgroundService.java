@@ -90,7 +90,7 @@ public class CameraBackgroundService extends Service {
                     "Camera Service Channel",
                     NotificationManager.IMPORTANCE_DEFAULT
             );
-            // Disable sound and vibration for the notification
+            
             serviceChannel.setSound(null, null);
             serviceChannel.enableVibration(false);
 
@@ -100,11 +100,11 @@ public class CameraBackgroundService extends Service {
     }
 
     private Notification createNotification() {
-        // Create intent for stop action
+        
         Intent stopIntent = new Intent(this, CameraBackgroundService.class);
         stopIntent.setAction(ACTION_STOP_RECORDING);
 
-        // Create pending intent for stop action
+        
         PendingIntent stopPendingIntent = PendingIntent.getService(
                 this,
                 0,
@@ -112,7 +112,7 @@ public class CameraBackgroundService extends Service {
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
 
-        // Create intent for opening the app
+        
         Intent mainIntent = new Intent(this, MainActivity.class);
         PendingIntent mainPendingIntent = PendingIntent.getActivity(
                 this,
@@ -121,7 +121,7 @@ public class CameraBackgroundService extends Service {
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
 
-        // Build the notification
+        
         return new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("Recording in Progress")
                 .setContentText("Tap to open app")
@@ -321,11 +321,11 @@ public class CameraBackgroundService extends Service {
         isRecording = false;
         Log.d(TAG, "Stopped recording");
 
-        // Broadcast that recording has stopped
+        
         Intent intent = new Intent("com.example.secretcamera.RECORDING_STOPPED");
         sendBroadcast(intent);
 
-        // Stop the foreground service
+        
         stopForeground(true);
         stopSelf();
     }
